@@ -1,12 +1,10 @@
 package com.amrfawzi.ecommerce.product_service.service;
 
-
 import com.amrfawzi.ecommerce.product_service.dto.CreateProductRequest;
 import com.amrfawzi.ecommerce.product_service.dto.ProductResponse;
 import com.amrfawzi.ecommerce.product_service.dto.UpdateProductRequest;
 import com.amrfawzi.ecommerce.product_service.model.Product;
 import com.amrfawzi.ecommerce.product_service.repository.ProductRepository;
-import com.amrfawzi.ecommerce.product_service.service.ProductService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,8 +19,20 @@ public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
 
+    private boolean isAdmin(List<String> roles) {
+        return roles.contains("ROLE_ADMIN");
+    }
+
+    private boolean isSeller(List<String> roles) {
+        return roles.contains("ROLE_SELLER");
+    }
+
     @Override
-    public ProductResponse createProduct(CreateProductRequest request) {
+    public ProductResponse createProduct(CreateProductRequest request, Long ownerId, List<String> roles) {
+        if (!(isAdmin(roles) || isSeller(roles))) {
+            throw new RuntimeException("Unauthorized to create product");
+        }
+
         Product product = Product.builder()
                 .name(request.getName())
                 .description(request.getDescription())
@@ -31,16 +41,20 @@ public class ProductServiceImpl implements ProductService {
                 .category(request.getCategory())
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
+                .ownerId(ownerId)
                 .build();
 
-        Product savedProduct = productRepository.save(product);
-        return mapToResponse(savedProduct);
+        return mapToResponse(productRepository.save(product));
     }
 
     @Override
-    public ProductResponse updateProduct(Long productId, UpdateProductRequest request) {
+    public ProductResponse updateProduct(Long productId, UpdateProductRequest request, Long ownerId, List<String> roles) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new EntityNotFoundException("Product not found"));
+
+        if (!isAdmin(roles) && !product.getOwnerId().equals(ownerId)) {
+            throw new RuntimeException("You are not allowed to update this product");
+        }
 
         if (request.getName() != null) product.setName(request.getName());
         if (request.getDescription() != null) product.setDescription(request.getDescription());
@@ -50,15 +64,18 @@ public class ProductServiceImpl implements ProductService {
 
         product.setUpdatedAt(LocalDateTime.now());
 
-        Product updatedProduct = productRepository.save(product);
-        return mapToResponse(updatedProduct);
+        return mapToResponse(productRepository.save(product));
     }
 
     @Override
-    public void deleteProduct(Long productId) {
-        if (!productRepository.existsById(productId)) {
-            throw new EntityNotFoundException("Product not found");
+    public void deleteProduct(Long productId, Long ownerId, List<String> roles) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new EntityNotFoundException("Product not found"));
+
+        if (!isAdmin(roles) && !product.getOwnerId().equals(ownerId)) {
+            throw new RuntimeException("You are not allowed to delete this product");
         }
+
         productRepository.deleteById(productId);
     }
 
@@ -70,7 +87,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public List<ProductResponse> getAllProducts() {
+    public List<ProductResponse> getMyProducts() {
         return productRepository.findAll()
                 .stream()
                 .map(this::mapToResponse)
@@ -90,4 +107,3 @@ public class ProductServiceImpl implements ProductService {
         return response;
     }
 }
-

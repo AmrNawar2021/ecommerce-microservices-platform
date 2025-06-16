@@ -1,12 +1,12 @@
 server:
-  port: 8090
+  port: 8082
 
 spring:
   application:
-    name: user-service
+    name: order-service
 
   datasource:
-    url: jdbc:postgresql://postgres-user-db:5432/user_db
+    url: jdbc:postgresql://postgres-order-db:5432/order_db
     username: postgres
     password: my-secret-pw
     driver-class-name: org.postgresql.Driver
@@ -19,6 +19,14 @@ spring:
       hibernate:
         format_sql: true
 
+  kafka:
+    bootstrap-servers: kafka:9092
+
+service:
+  product:
+    url: http://product-service:8081
+  user:
+    url: http://user-service:8090
+
 jwt:
   secret: ui5zz55TVMCMVZoCW9rU9gEdG6wMtMo8Xf0MP7Zoa0k=
-  expiration: 86400000

@@ -1,0 +1,145 @@
+version: "3.9"
+
+services:
+
+  # ================= POSTGRES DATABASES =================
+
+  postgres-user:
+    image: postgres:16
+    container_name: postgres-user-db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: my-secret-pw
+      POSTGRES_DB: user_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - user-db-data:/var/lib/postgresql/data
+    networks:
+      - ecommerce-net
+
+  postgres-product:
+    image: postgres:16
+    container_name: postgres-product-db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: my-secret-pw
+      POSTGRES_DB: product_db
+    ports:
+      - "5434:5432"
+    volumes:
+      - product-db-data:/var/lib/postgresql/data
+    networks:
+      - ecommerce-net
+
+  postgres-order:
+    image: postgres:16
+    container_name: postgres-order-db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: my-secret-pw
+      POSTGRES_DB: order_db
+    ports:
+      - "5435:5432"
+    volumes:
+      - order-db-data:/var/lib/postgresql/data
+    networks:
+      - ecommerce-net
+
+  # ================= KAFKA =================
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks:
+      - ecommerce-net
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+    networks:
+      - ecommerce-net
+
+  # ================= USER SERVICE =================
+
+  user-service:
+    build:
+      context: ./user-service
+    container_name: user-service
+    depends_on:
+      - postgres-user
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-user-db:5432/user_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: my-secret-pw
+    ports:
+      - "8090:8090"
+    networks:
+      - ecommerce-net
+
+  # ================= PRODUCT SERVICE =================
+
+  product-service:
+    build:
+      context: ./product-service
+    container_name: product-service
+    depends_on:
+      - postgres-product
+      - kafka
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-product:5432/product_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: my-secret-pw
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_SECRET_KEY: ui5zz55TVMCMVZoCW9rU9gEdG6wMtMo8Xf0MP7Zoa0k=
+    ports:
+      - "8091:8081"
+    networks:
+      - ecommerce-net
+
+
+
+
+  # ================= ORDER SERVICE =================
+
+  order-service:
+    build:
+      context: ./order-service
+    container_name: order-service
+    depends_on:
+      - postgres-order
+      - kafka
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-order-db:5432/order_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: my-secret-pw
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    ports:
+      - "8092:8082"
+    networks:
+      - ecommerce-net
+
+volumes:
+  user-db-data:
+  product-db-data:
+  order-db-data:
+
+networks:
+  ecommerce-net:
+    driver: bridge

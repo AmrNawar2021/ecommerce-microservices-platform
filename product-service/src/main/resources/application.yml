@@ -1,11 +1,15 @@
+server:
+  port: 8081
+
 spring:
   application:
     name: product-service
 
   datasource:
-    url: jdbc:postgresql://localhost:5433/product_db
+    url: jdbc:postgresql://postgres-product-db:5432/product_db
     username: postgres
-    password: root
+    password: my-secret-pw
+    driver-class-name: org.postgresql.Driver
 
   jpa:
     hibernate:
@@ -15,8 +19,11 @@ spring:
       hibernate:
         format_sql: true
 
-server:
-  port: 8091
+  kafka:
+    bootstrap-servers: kafka:9092
 
-
-
+  security:
+    oauth2:
+      resource-server:
+        jwt:
+          secret-key: ui5zz55TVMCMVZoCW9rU9gEdG6wMtMo8Xf0MP7Zoa0k=
