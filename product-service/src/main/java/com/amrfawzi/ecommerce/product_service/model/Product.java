@@ -25,7 +25,7 @@ public class Product {
     private String description;
 
     @Column(nullable = false)
-    private BigDecimal price;
+    private Double price;
 
     @Column(nullable = false)
     private int quantity;

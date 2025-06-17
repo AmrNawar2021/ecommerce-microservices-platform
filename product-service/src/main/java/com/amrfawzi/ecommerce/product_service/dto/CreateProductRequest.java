@@ -18,7 +18,7 @@ public class CreateProductRequest {
 
     @NotNull
     @Min(0)
-    private BigDecimal price;
+    private Double price;
 
     @NotNull
     @Min(0)

@@ -22,11 +22,14 @@ spring:
   kafka:
     bootstrap-servers: kafka:9092
 
+  security:
+    oauth2:
+      resource-server:
+        jwt:
+          secret-key: ui5zz55TVMCMVZoCW9rU9gEdG6wMtMo8Xf0MP7Zoa0k=
+
 service:
   product:
     url: http://product-service:8081
   user:
     url: http://user-service:8090
-
-jwt:
-  secret: ui5zz55TVMCMVZoCW9rU9gEdG6wMtMo8Xf0MP7Zoa0k=

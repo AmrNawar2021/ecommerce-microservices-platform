@@ -5,6 +5,7 @@ import com.amr.ecommerce.order_service.model.OrderStatus;
 import lombok.Builder;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data

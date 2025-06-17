@@ -13,7 +13,7 @@ public class UpdateProductRequest {
     private String description;
 
     @Min(0)
-    private BigDecimal price;
+    private Double price;
 
     @Min(0)
     private Integer quantity;
